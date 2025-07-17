@@ -8,6 +8,8 @@ const Signup = () => {
     email: "",
     password: "",
   });
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -15,6 +17,11 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (user.password !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+    setPasswordError("");
     try {
       let res = await fetch("http://localhost:7000/api/registration", {
         method: "POST",
@@ -25,6 +32,7 @@ const Signup = () => {
       });
       res = await res.json();
       setUser({ name: "", email: "", password: "" });
+      setConfirmPassword("");
       navigate("/login");
     } catch (error) {
       console.log(error);
@@ -74,6 +82,20 @@ const Signup = () => {
             className="form-input"
           />
         </div>
+        <div className="form-group">
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            placeholder="Confirm your password"
+            className="form-input"
+          />
+        </div>
+        {passwordError && <div style={{ color: 'red', marginBottom: '10px' }}>{passwordError}</div>}
         <button type="submit" className="auth-btn">
           Sign Up
         </button>

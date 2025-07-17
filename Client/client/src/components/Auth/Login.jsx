@@ -7,6 +7,7 @@ const Login = () => {
     email: "",
     password: "",
   });
+  const [loginError, setLoginError] = useState("");
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -14,6 +15,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoginError("");
     try {
       let res = await fetch("http://localhost:7000/api/login", {
         method: "POST",
@@ -22,12 +24,111 @@ const Login = () => {
         },
         body: JSON.stringify(user),
       });
-      res = await res.json();
+      let data = await res.json();
+      if (!res.ok || data.message === "password not matched ..") {
+        setLoginError("Please enter correct password.");
+        return;
+      }
       setUser({ email: "", password: "" });
-      localStorage.setItem("token", res.token);
+      localStorage.setItem("token", data.token);
       navigate("/bookstore");
     } catch (error) {
-      console.log(error);
+      setLoginError("An error occurred. Please try again.");
+    }
+  };
+
+  // Add state and handlers for forgot password
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMsg, setForgotMsg] = useState("");
+  const [forgotMsgColor, setForgotMsgColor] = useState("green");
+  const [step, setStep] = useState(1); // 1: email, 2: otp, 3: reset
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setForgotMsg("");
+    try {
+      const res = await fetch("http://localhost:7000/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setForgotMsg("OTP sent! Check your email.");
+        setForgotMsgColor("green");
+        setStep(2);
+      } else {
+        setForgotMsg(data.message || "Failed to send OTP.");
+        setForgotMsgColor("red");
+      }
+    } catch (err) {
+      setForgotMsg("Error sending email.");
+      setForgotMsgColor("red");
+    }
+  };
+
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setForgotMsg("");
+    try {
+      const res = await fetch("http://localhost:7000/api/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, otp }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setForgotMsg("OTP verified! Enter your new password.");
+        setForgotMsgColor("green");
+        setStep(3);
+      } else {
+        setForgotMsg(data.message || "Invalid OTP.");
+        setForgotMsgColor("red");
+      }
+    } catch (err) {
+      setForgotMsg("Error verifying OTP.");
+      setForgotMsgColor("red");
+    }
+  };
+
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    setForgotMsg("");
+    if (newPassword !== confirmPassword) {
+      setForgotMsg("Passwords do not match.");
+      setForgotMsgColor("red");
+      return;
+    }
+    try {
+      const res = await fetch("http://localhost:7000/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setForgotMsg("Password reset successful! You can now log in.");
+        setForgotMsgColor("green");
+        setTimeout(() => {
+          setShowForgot(false);
+          setStep(1);
+          setForgotEmail("");
+          setOtp("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setForgotMsg("");
+        }, 2000);
+      } else {
+        setForgotMsg(data.message || "Failed to reset password.");
+        setForgotMsgColor("red");
+      }
+    } catch (err) {
+      setForgotMsg("Error resetting password.");
+      setForgotMsgColor("red");
     }
   };
 
@@ -35,6 +136,7 @@ const Login = () => {
     <div className="auth-container">
       <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
         <h2 className="auth-title">Login</h2>
+        {loginError && <div style={{ color: 'red', marginBottom: 10 }}>{loginError}</div>}
         <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
@@ -64,7 +166,75 @@ const Login = () => {
         <button type="submit" className="auth-btn">
           Login
         </button>
+        <div style={{ marginTop: '10px', textAlign: 'center' }}>
+          <span
+            style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={() => setShowForgot(true)}
+          >
+            Forgot Password?
+          </span>
+        </div>
       </form>
+      {showForgot && (
+        <div className="forgot-modal" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 300, position: 'relative' }}>
+            <button onClick={() => { setShowForgot(false); setStep(1); setForgotEmail(""); setOtp(""); setNewPassword(""); setConfirmPassword(""); setForgotMsg(""); }} style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>×</button>
+            <h3>Forgot Password</h3>
+            {step === 1 && (
+              <form onSubmit={handleForgotSubmit}>
+                <input
+                  type="email"
+                  name="forgotEmail"
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  required
+                  placeholder="Enter your email"
+                  style={{ width: '100%', padding: 8, marginBottom: 12 }}
+                />
+                <button type="submit" style={{ width: '100%', padding: 8 }}>Send OTP</button>
+              </form>
+            )}
+            {step === 2 && (
+              <form onSubmit={handleOtpSubmit}>
+                <input
+                  type="text"
+                  name="otp"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  required
+                  placeholder="Enter OTP"
+                  style={{ width: '100%', padding: 8, marginBottom: 12 }}
+                />
+                <button type="submit" style={{ width: '100%', padding: 8 }}>Verify OTP</button>
+              </form>
+            )}
+            {step === 3 && (
+              <form onSubmit={handleResetSubmit}>
+                <input
+                  type="password"
+                  name="newPassword"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  required
+                  placeholder="Enter new password"
+                  style={{ width: '100%', padding: 8, marginBottom: 12 }}
+                />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Confirm new password"
+                  style={{ width: '100%', padding: 8, marginBottom: 12 }}
+                />
+                <button type="submit" style={{ width: '100%', padding: 8 }}>Reset Password</button>
+              </form>
+            )}
+            {forgotMsg && <div style={{ marginTop: 10, color: forgotMsgColor }}>{forgotMsg}</div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

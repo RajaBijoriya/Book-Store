@@ -6,13 +6,17 @@ import mongoose from "mongoose";
 dotenv.config();
 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/Authentication")
+  .connect("mongodb+srv://shivbijoriya123:s5Ai24uoWpfTKYJl@book-store.zlrc8cl.mongodb.net/?retryWrites=true&w=majority&appName=Book-Store",{
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("mongoDb connected....");
   })
   .catch((err) => {
     console.log("failed connection", err);
   });
+
 
 // mongoose.connect(process.env.MONGO_URL)
 

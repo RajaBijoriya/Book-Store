@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import router from "./routes/userRoutes.js";
 import bookRouter from "./routes/bookRoutes.js";
+// import nodemailer = require("nodemailer");
 
 const app = express();
 
@@ -17,6 +18,14 @@ app.use(
     credentials: true,
   })
 );
+
+// const otpStore = {};
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: ""
+//   }
+// })
 
 app.use(express.json());
 
