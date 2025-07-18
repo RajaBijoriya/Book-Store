@@ -1,4 +1,18 @@
 import React, { useEffect, useState } from "react";
+import { useDarkMode } from "./DarkModeContext";
+
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(onClose, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+  if (!message) return null;
+  return (
+    <div className={`toast toast-${type}`}>{message}</div>
+  );
+};
 
 const BookStore = () => {
   const [books, setBooks] = useState([]);
@@ -20,6 +34,11 @@ const BookStore = () => {
     minPrice: "",
     maxPrice: "",
   });
+  const [role, setRole] = useState(localStorage.getItem("role") || "user");
+  const [toast, setToast] = useState({ message: '', type: 'success' });
+  const { darkMode, setDarkMode } = useDarkMode();
+
+  // Remove local darkMode state and useEffect for body background
 
   // Fetch books
   const fetchBooks = async () => {
@@ -48,6 +67,8 @@ const BookStore = () => {
 
   useEffect(() => {
     fetchBooks();
+    // Get role from localStorage (set on login)
+    setRole(localStorage.getItem("role") || "user");
     // eslint-disable-next-line
   }, []);
 
@@ -108,9 +129,7 @@ const BookStore = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage(
-          editMode ? "Book updated successfully!" : "Book added successfully!"
-        );
+        setToast({ message: editMode ? "Book updated successfully!" : "Book added successfully!", type: 'success' });
         setBook({
           bookName: "",
           bookAuthor: "",
@@ -122,10 +141,10 @@ const BookStore = () => {
         setShowAddForm(false);
         fetchBooks();
       } else {
-        setMessage(data.message || "Failed to save book");
+        setToast({ message: data.message || "Failed to save book", type: 'error' });
       }
     } catch (error) {
-      setMessage("Error saving book");
+      setToast({ message: "Error saving book", type: 'error' });
     }
   };
 
@@ -142,13 +161,13 @@ const BookStore = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage("Book deleted successfully!");
+        setToast({ message: "Book deleted successfully!", type: 'success' });
         fetchBooks();
       } else {
-        setMessage(data.message || "Failed to delete book");
+        setToast({ message: data.message || "Failed to delete book", type: 'error' });
       }
     } catch (error) {
-      setMessage("Error deleting book");
+      setToast({ message: "Error deleting book", type: 'error' });
     }
   };
 
@@ -166,10 +185,25 @@ const BookStore = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Add to Cart handler (with localStorage cart logic)
+  const handleAddToCart = (book) => {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    // Check if book already in cart (by _id)
+    if (cart.some(item => item._id === book._id)) {
+      setToast({ message: `Book already in cart!`, type: 'error' });
+      return;
+    }
+    cart.push({ ...book, quantity: 1 });
+    localStorage.setItem('cart', JSON.stringify(cart));
+    setToast({ message: `Added '${book.bookName}' to cart!`, type: 'success' });
+  };
+
   if (error) return <div className="error-message">{error}</div>;
 
   return (
     <div className="bookstore-container min-h-screen bg-gradient-to-br from-slate-100 to-indigo-100 overflow-x-hidden">
+      {/* Remove local dark mode toggle button, NavBar handles it */}
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, message: '' })} />
       <h2 className="bookstore-title">Book Store</h2>
       {/* Filter UI */}
       <div className="book-filter" style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -207,7 +241,7 @@ const BookStore = () => {
         />
       </div>
       {/* Add Book Button */}
-      {!showAddForm && !editMode && (
+      {role === "admin" && !showAddForm && !editMode && (
         <button
           style={{ marginBottom: 24, padding: '10px 24px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
           onClick={() => { setShowAddForm(true); setEditMode(false); setBook({ bookName: '', bookAuthor: '', bookPrice: '', bookImage: null }); }}
@@ -305,78 +339,51 @@ const BookStore = () => {
           )}
         </form>
       )}
-      {/* Book List */}
-      <div className="book-list grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-8 px-2 w-full">
-        {filteredBooks.length === 0 ? (
-          <div>No books found.</div>
-        ) : (
-          filteredBooks.map((b) => (
-            <div
-              key={b._id}
-              className="book-card w-full bg-white rounded-2xl shadow-lg border border-slate-200 flex flex-col items-center min-h-[340px] transition-transform duration-200 hover:-translate-y-1 hover:scale-105 cursor-pointer font-sans p-5"
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-6px) scale(1.03)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'none'}
-            >
-              {b.bookImage && (
-                <img
-                  src={`http://localhost:7000/uploads/${b.bookImage}`}
-                  alt={b.bookName}
-                  style={{
-                    width: '100%',
-                    maxWidth: 160,
-                    height: 160,
-                    objectFit: 'cover',
-                    borderRadius: 12,
-                    marginBottom: 18,
-                    boxShadow: '0 2px 8px rgba(80,80,180,0.10)'
-                  }}
-                />
-              )}
-              <h4 style={{
-                margin: '8px 0 4px 0',
-                color: '#3730a3',
-                fontWeight: 700,
-                fontSize: 20,
-                textAlign: 'center',
-                letterSpacing: 0.2
-              }}>{b.bookName}</h4>
-              <div style={{ color: '#334155', fontSize: 16, marginBottom: 2, fontWeight: 500 }}>Author: <span style={{ color: '#6366f1' }}>{b.bookAuthor}</span></div>
-              <div style={{ color: '#64748b', fontSize: 16, marginBottom: 10 }}>Price: <span style={{ color: '#059669', fontWeight: 600 }}>₹{b.bookPrice}</span></div>
+      {/* Book Cards Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+        {filteredBooks.map((b) => (
+          <div key={b._id} className="book-card" style={{ transition: 'box-shadow 0.2s', boxShadow: '0 2px 8px rgba(30,41,59,0.06)', background: '#f1f5f9', borderRadius: 12, padding: 20, display: 'flex', flexDirection: 'column', gap: 8, position: 'relative' }}>
+            {b.bookImage && (
+              <img
+                src={`http://localhost:7000/uploads/${b.bookImage}`}
+                alt={b.bookName}
+                style={{
+                  width: '100%',
+                  maxWidth: 160,
+                  height: 160,
+                  objectFit: 'cover',
+                  borderRadius: 12,
+                  marginBottom: 18,
+                  boxShadow: '0 2px 8px rgba(80,80,180,0.10)'
+                }}
+              />
+            )}
+            <h4 style={{
+              margin: '8px 0 4px 0',
+              color: '#3730a3',
+              fontWeight: 700,
+              fontSize: 20,
+              textAlign: 'center',
+              letterSpacing: 0.2
+            }}>{b.bookName}</h4>
+            <div style={{ color: '#334155', fontSize: 16, marginBottom: 2, fontWeight: 500 }}>Author: <span style={{ color: '#6366f1' }}>{b.bookAuthor}</span></div>
+            <div style={{ color: '#64748b', fontSize: 16, marginBottom: 10 }}>Price: <span style={{ color: '#059669', fontWeight: 600 }}>₹{b.bookPrice}</span></div>
+            {role === "admin" && (
               <div style={{ display: 'flex', gap: 10, marginTop: 'auto', width: '100%' }}>
-                <button
-                  onClick={() => handleEdit(b)}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(90deg, #6366f1 60%, #818cf8 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 0',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    fontSize: 15,
-                    boxShadow: '0 1px 4px rgba(99,102,241,0.08)'
-                  }}
-                >Edit</button>
-                <button
-                  onClick={() => handleDelete(b._id)}
-                  style={{
-                    flex: 1,
-                    background: 'linear-gradient(90deg, #ef4444 60%, #f87171 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 0',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    fontSize: 15,
-                    boxShadow: '0 1px 4px rgba(239,68,68,0.08)'
-                  }}
-                >Delete</button>
+                <button onClick={() => handleEdit(b)} style={{ background: '#6366f1', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 500 }}>Edit</button>
+                <button onClick={() => handleDelete(b._id)} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 500 }}>Delete</button>
               </div>
-            </div>
-          ))
-        )}
+            )}
+            {role === "user" && (
+              <button
+                style={{ marginTop: 12, background: '#22c55e', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
+                onClick={() => handleAddToCart(b)}
+              >
+                Add to Cart
+              </button>
+            )}
+          </div>
+        ))}
       </div>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');

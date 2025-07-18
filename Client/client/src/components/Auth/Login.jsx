@@ -1,5 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDarkMode } from "../DarkModeContext";
+
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(onClose, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+  if (!message) return null;
+  return (
+    <div className={`toast toast-${type}`}>{message}</div>
+  );
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -8,6 +22,14 @@ const Login = () => {
     password: "",
   });
   const [loginError, setLoginError] = useState("");
+  const [toast, setToast] = useState({ message: '', type: 'error' });
+  const { darkMode, setDarkMode } = useDarkMode();
+
+  useEffect(() => {
+    document.body.style.background = darkMode
+      ? 'linear-gradient(135deg, #18181b 0%, #312e81 100%)'
+      : 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)';
+  }, [darkMode]);
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -27,13 +49,17 @@ const Login = () => {
       let data = await res.json();
       if (!res.ok || data.message === "password not matched ..") {
         setLoginError("Please enter correct password.");
+        setToast({ message: "Please enter correct password.", type: 'error' });
         return;
       }
       setUser({ email: "", password: "" });
       localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.user.role); // Store role for UI
       navigate("/bookstore");
+      setToast({ message: "Login successful!", type: 'success' });
     } catch (error) {
       setLoginError("An error occurred. Please try again.");
+      setToast({ message: "An error occurred. Please try again.", type: 'error' });
     }
   };
 
@@ -133,7 +159,8 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container" style={{ animation: 'fadeInToast 0.5s' }}>
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, message: '' })} />
       <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
         <h2 className="auth-title">Login</h2>
         {loginError && <div style={{ color: 'red', marginBottom: 10 }}>{loginError}</div>}

@@ -1,4 +1,18 @@
 import React, { useState } from "react";
+import { useDarkMode } from "./DarkModeContext";
+
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(onClose, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+  if (!message) return null;
+  return (
+    <div className={`toast toast-${type}`}>{message}</div>
+  );
+};
 
 const AddBook = () => {
   const [book, setBook] = useState({
@@ -7,7 +21,8 @@ const AddBook = () => {
     bookPrice: "",
     bookImage: null,
   });
-  const [message, setMessage] = useState("");
+  const [toast, setToast] = useState({ message: '', type: 'success' });
+  const { darkMode, setDarkMode } = useDarkMode();
 
   const handleChange = (e) => {
     if (e.target.name === "bookImage") {
@@ -21,7 +36,7 @@ const AddBook = () => {
     e.preventDefault();
     const token = localStorage.getItem("token");
     if (!token) {
-      setMessage("No token found. Please login.");
+      setToast({ message: "No token found. Please login.", type: 'error' });
       return;
     }
     const formData = new FormData();
@@ -39,7 +54,7 @@ const AddBook = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage("Book added successfully!");
+        setToast({ message: "Book added successfully!", type: 'success' });
         setBook({
           bookName: "",
           bookAuthor: "",
@@ -47,18 +62,24 @@ const AddBook = () => {
           bookImage: null,
         });
       } else {
-        setMessage(data.message || "Failed to add book");
+        setToast({ message: data.message || "Failed to add book", type: 'error' });
       }
     } catch (error) {
-      setMessage("Error adding book");
+      setToast({ message: "Error adding book", type: 'error' });
     }
   };
 
+  const role = localStorage.getItem("role") || "user";
+  if (role !== "admin") {
+    return <div style={{ color: 'red', fontWeight: 600, margin: 32 }}>Access denied: Only admins can add books.</div>;
+  }
+
   return (
-    <div>
-      <h2>Add Book</h2>
+    <div className="auth-container" style={{ maxWidth: 480, margin: '40px auto', animation: 'fadeInToast 0.5s' }}>
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, message: '' })} />
+      <h2 className="auth-title">Add Book</h2>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
-        <div>
+        <div className="form-group">
           <label>Book Name:</label>
           <input
             type="text"
@@ -66,9 +87,10 @@ const AddBook = () => {
             value={book.bookName}
             onChange={handleChange}
             required
+            className="form-input"
           />
         </div>
-        <div>
+        <div className="form-group">
           <label>Book Author:</label>
           <input
             type="text"
@@ -76,9 +98,10 @@ const AddBook = () => {
             value={book.bookAuthor}
             onChange={handleChange}
             required
+            className="form-input"
           />
         </div>
-        <div>
+        <div className="form-group">
           <label>Book Price:</label>
           <input
             type="number"
@@ -86,9 +109,10 @@ const AddBook = () => {
             value={book.bookPrice}
             onChange={handleChange}
             required
+            className="form-input"
           />
         </div>
-        <div>
+        <div className="form-group">
           <label>Book Image:</label>
           <input
             type="file"
@@ -96,11 +120,11 @@ const AddBook = () => {
             accept="image/*"
             onChange={handleChange}
             required
+            className="form-input"
           />
         </div>
-        <button type="submit">Add Book</button>
+        <button type="submit" className="auth-btn">Add Book</button>
       </form>
-      {message && <div>{message}</div>}
     </div>
   );
 };

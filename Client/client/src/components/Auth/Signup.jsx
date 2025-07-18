@@ -1,5 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDarkMode } from "../DarkModeContext";
+
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(onClose, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+  if (!message) return null;
+  return (
+    <div className={`toast toast-${type}`}>{message}</div>
+  );
+};
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -11,6 +25,14 @@ const Signup = () => {
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [toast, setToast] = useState({ message: '', type: 'error' });
+  const { darkMode, setDarkMode } = useDarkMode();
+
+  useEffect(() => {
+    document.body.style.background = darkMode
+      ? 'linear-gradient(135deg, #18181b 0%, #312e81 100%)'
+      : 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)';
+  }, [darkMode]);
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -35,13 +57,16 @@ const Signup = () => {
       setUser({ name: "", email: "", password: "", role: "user" });
       setConfirmPassword("");
       navigate("/login");
+      setToast({ message: 'Signup successful!', type: 'success' });
     } catch (error) {
       console.log(error);
+      setToast({ message: 'Signup failed. Email or username might be in use.', type: 'error' });
     }
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container" style={{ animation: 'fadeInToast 0.5s' }}>
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, message: '' })} />
       <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
         <h2 className="auth-title">Sign Up</h2>
         <div className="form-group">

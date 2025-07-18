@@ -4,21 +4,24 @@ import Login from "./components/Auth/Login";
 import BookStore from "./components/BookStore";
 import AddBook from "./components/AddBook";
 import NavBar from "./components/NavBar";
-
+import Cart from "./components/Cart";
 import { Route, Routes } from "react-router-dom";
+import { DarkModeProvider } from "./components/DarkModeContext";
 
 const App = () => {
   return (
-    <div className="w-full overflow-x-hidden">
-      <NavBar />
-      <Routes>
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/bookstore" element={<BookStore />} />
-        <Route path="/addbook" element={<AddBook />} />
-        
-      </Routes>
-    </div>
+    <DarkModeProvider>
+      <div className="w-full overflow-x-hidden">
+        <NavBar />
+        <Routes>
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/bookstore" element={<BookStore />} />
+          <Route path="/addbook" element={<AddBook />} />
+          <Route path="/cart" element={<Cart />} />
+        </Routes>
+      </div>
+    </DarkModeProvider>
   );
 };
 

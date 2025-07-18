@@ -5,6 +5,7 @@ import {
   editBook,
   deleteBook,
   verifyToken,
+  isAdmin,
 } from "../controller/bookController.js";
 import Book from "../models/bookModel.js";
 
@@ -23,12 +24,12 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 // Add book (with image upload)
-router.post("/add", verifyToken, upload.single("bookImage"), addBook);
+router.post("/add", verifyToken, isAdmin, upload.single("bookImage"), addBook);
 
 // Edit book (with image upload)
-router.put("/edit/:id", verifyToken, upload.single("bookImage"), editBook);
+router.put("/edit/:id", verifyToken, isAdmin, upload.single("bookImage"), editBook);
 
 // Delete book
-router.delete("/delete/:id", verifyToken, deleteBook);
+router.delete("/delete/:id", verifyToken, isAdmin, deleteBook);
 
 export default router;
