@@ -7,6 +7,7 @@ const Signup = () => {
     name: "",
     email: "",
     password: "",
+    role: "user",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -31,7 +32,7 @@ const Signup = () => {
         body: JSON.stringify(user),
       });
       res = await res.json();
-      setUser({ name: "", email: "", password: "" });
+      setUser({ name: "", email: "", password: "", role: "user" });
       setConfirmPassword("");
       navigate("/login");
     } catch (error) {
@@ -94,6 +95,19 @@ const Signup = () => {
             placeholder="Confirm your password"
             className="form-input"
           />
+        </div>
+        <div className="form-group">
+          <label htmlFor="role">Role</label>
+          <select
+            id="role"
+            name="role"
+            value={user.role}
+            onChange={handleChange}
+            className="form-input"
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
         {passwordError && <div style={{ color: 'red', marginBottom: '10px' }}>{passwordError}</div>}
         <button type="submit" className="auth-btn">

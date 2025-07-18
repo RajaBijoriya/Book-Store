@@ -6,10 +6,7 @@ import mongoose from "mongoose";
 dotenv.config();
 
 mongoose
-  .connect("mongodb+srv://shivbijoriya123:s5Ai24uoWpfTKYJl@book-store.zlrc8cl.mongodb.net/?retryWrites=true&w=majority&appName=Book-Store",{
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect("mongodb+srv://shivbijoriya123:s5Ai24uoWpfTKYJl@book-store.zlrc8cl.mongodb.net/?retryWrites=true&w=majority&appName=Book-Store")
   .then(() => {
     console.log("mongoDb connected....");
   })

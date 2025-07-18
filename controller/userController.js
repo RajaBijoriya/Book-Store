@@ -9,7 +9,7 @@ import nodemailer from "nodemailer";
 
 export const registrationController = async (req, res) => {
   try {
-    let { name, email, password } = req.body;
+    let { name, email, password, role } = req.body;
 
     let existUser = await User.findOne({ email: email });
     if (existUser) {
@@ -24,6 +24,7 @@ export const registrationController = async (req, res) => {
       name,
       email,
       password: hashPassword,
+      role: role || "user",
     });
     user = await user.save();
     res.status(201).send({
