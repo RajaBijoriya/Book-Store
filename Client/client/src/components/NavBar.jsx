@@ -45,6 +45,10 @@ const NavBar = () => {
               🛒 Cart ({cartCount})
             </Link>
           )}
+          {/* Profile link for all roles */}
+          <Link to="/profile" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>
+            👤 Profile
+          </Link>
           <Link to="/login" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Login</Link>
           <Link to="/signup" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Sign Up</Link>
           <button

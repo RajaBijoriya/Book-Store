@@ -54,7 +54,7 @@ const Login = () => {
       }
       setUser({ email: "", password: "" });
       localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.user.role); // Store role for UI
+      localStorage.setItem("role", data.user.role.toLowerCase()); // Store role for UI, always lowercase
       navigate("/bookstore");
       setToast({ message: "Login successful!", type: 'success' });
     } catch (error) {
